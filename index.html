@@ -5,38 +5,56 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hadoop MapReduce Simulator</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; }
-        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        h2 { color: #0052cc; text-align: center; font-size: 22px; }
-        textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 16px; margin-bottom: 10px; }
-        button { background-color: #0052cc; color: white; border: none; padding: 14px; border-radius: 5px; width: 100%; font-size: 16px; cursor: pointer; font-weight: bold; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f4f8; color: #333; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
+        h2 { color: #0052cc; text-align: center; margin-bottom: 5px; }
+        p.subtitle { text-align: center; color: #666; font-size: 14px; margin-bottom: 20px; }
+        textarea { width: 100%; padding: 12px; border: 2px solid #e1e4e8; border-radius: 8px; box-sizing: border-box; font-size: 16px; margin-bottom: 15px; resize: vertical; outline: none; transition: border-color 0.3s; }
+        textarea:focus { border-color: #0052cc; }
+        .button-group { display: flex; gap: 10px; margin-bottom: 20px; }
+        button { flex: 1; background-color: #0052cc; color: white; border: none; padding: 14px; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: bold; transition: background 0.3s; }
         button:active { background-color: #003d99; }
-        .step { background: #e9f2ff; margin-top: 15px; padding: 15px; border-left: 4px solid #0052cc; border-radius: 4px; display: none; word-wrap: break-word; }
-        h3 { margin-top: 0; font-size: 16px; color: #0052cc; }
-        .footer { text-align: center; margin-top: 30px; font-size: 14px; color: #666; font-weight: bold; line-height: 1.6; }
+        button.reset-btn { background-color: #e53e3e; }
+        button.reset-btn:active { background-color: #c53030; }
+        .step { background: #ffffff; margin-top: 15px; padding: 15px; border-left: 5px solid #0052cc; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: none; }
+        h3 { margin-top: 0; font-size: 17px; color: #0052cc; display: flex; align-items: center; gap: 8px; }
+        .data-badge { display: inline-block; background: #e9f2ff; color: #0052cc; padding: 5px 10px; border-radius: 15px; margin: 4px; font-size: 14px; border: 1px solid #b3d4ff; }
+        .final-badge { display: inline-block; background: #e6ffed; color: #1a7f37; padding: 5px 10px; border-radius: 15px; margin: 4px; font-size: 14px; border: 1px solid #b7ebc5; font-weight: bold; }
+        .loader { text-align: center; color: #0052cc; font-weight: bold; display: none; margin: 20px 0; }
+        .footer { text-align: center; margin-top: 40px; font-size: 14px; color: #777; font-weight: bold; line-height: 1.6; border-top: 1px solid #eee; padding-top: 20px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>Hadoop MapReduce Simulator</h2>
-    <p>Enter a short paragraph below to see how Hadoop counts words.</p>
-    <textarea id="inputText" rows="3">Big data is fast. Hadoop is big data.</textarea>
-    <button onclick="runSimulation()">Start MapReduce Job</button>
+    <h2>🐘 Hadoop Simulator</h2>
+    <p class="subtitle">Enter a paragraph below to visualize the MapReduce process.</p>
+    
+    <textarea id="inputText" rows="3" placeholder="Type your text here...">Big data is fast. Hadoop is big data.</textarea>
+    
+    <div class="button-group">
+        <button onclick="runSimulation()" id="startBtn">Start MapReduce</button>
+        <button onclick="resetApp()" class="reset-btn">Reset</button>
+    </div>
+
+    <div id="loader" class="loader">⚙️ Initializing YARN cluster...</div>
 
     <div id="mapStep" class="step">
-        <h3>1. Map Phase (Splitting)</h3>
-        <p id="mapOutput"></p>
+        <h3>📍 1. Map Phase (Splitting)</h3>
+        <p style="font-size: 13px; color: #666; margin-top: 0;">DataNodes are splitting the text into individual key-value pairs.</p>
+        <div id="mapOutput"></div>
     </div>
 
     <div id="shuffleStep" class="step">
-        <h3>2. Shuffle & Sort Phase</h3>
-        <p id="shuffleOutput"></p>
+        <h3>🔄 2. Shuffle & Sort Phase</h3>
+        <p style="font-size: 13px; color: #666; margin-top: 0;">Grouping all identical keys together across the network.</p>
+        <div id="shuffleOutput"></div>
     </div>
 
     <div id="reduceStep" class="step">
-        <h3>3. Reduce Phase (Final Output)</h3>
-        <p id="reduceOutput"></p>
+        <h3>✅ 3. Reduce Phase (Final Output)</h3>
+        <p style="font-size: 13px; color: #666; margin-top: 0;">Reducers are aggregating the final word counts.</p>
+        <div id="reduceOutput"></div>
     </div>
 
     <div class="footer">
@@ -50,28 +68,72 @@
         document.getElementById('mapStep').style.display = 'none';
         document.getElementById('shuffleStep').style.display = 'none';
         document.getElementById('reduceStep').style.display = 'none';
-
+        
+        const btn = document.getElementById('startBtn');
+        const loader = document.getElementById('loader');
+        
         const text = document.getElementById('inputText').value.toLowerCase().replace(/[^\w\s]/g, "");
         const words = text.split(/\s+/).filter(w => w.length > 0);
-        if(words.length === 0) return;
+        
+        if(words.length === 0) {
+            alert("Please enter some text first!");
+            return;
+        }
 
-        let mapResult = words.map(w => `[<b>${w}</b>, 1]`).join(" ");
+        btn.disabled = true;
+        btn.style.opacity = '0.7';
+        loader.style.display = 'block';
+        loader.innerText = "⚙️ Allocating resources via YARN...";
+
+        // Map Phase
+        let mapResult = words.map(w => `<span class="data-badge">[${w}, 1]</span>`).join(" ");
         document.getElementById('mapOutput').innerHTML = mapResult;
         
+        // Shuffle Phase
         let shuffleDict = {};
         words.forEach(w => {
             if(!shuffleDict[w]) shuffleDict[w] = [];
             shuffleDict[w].push(1);
         });
-        let shuffleResult = Object.keys(shuffleDict).map(k => `<b>${k}</b>: [${shuffleDict[k].join(", ")}]`).join("<br>");
+        let shuffleResult = Object.keys(shuffleDict).map(k => `<span class="data-badge"><b>${k}</b>: [${shuffleDict[k].join(", ")}]</span>`).join(" ");
         document.getElementById('shuffleOutput').innerHTML = shuffleResult;
 
-        let reduceResult = Object.keys(shuffleDict).map(k => `<b>${k}</b> = ${shuffleDict[k].length}`).join("<br>");
+        // Reduce Phase
+        let reduceResult = Object.keys(shuffleDict).map(k => `<span class="final-badge"><b>${k}</b> = ${shuffleDict[k].length}</span>`).join(" ");
         document.getElementById('reduceOutput').innerHTML = reduceResult;
 
-        setTimeout(() => { document.getElementById('mapStep').style.display = 'block'; }, 400);
-        setTimeout(() => { document.getElementById('shuffleStep').style.display = 'block'; }, 1200);
-        setTimeout(() => { document.getElementById('reduceStep').style.display = 'block'; }, 2000);
+        // Visual delays to simulate processing time
+        setTimeout(() => { 
+            loader.innerText = "📍 Running Map Tasks on DataNodes..."; 
+            document.getElementById('mapStep').style.display = 'block'; 
+        }, 1000);
+        
+        setTimeout(() => { 
+            loader.innerText = "🔄 Shuffling data across the network..."; 
+            document.getElementById('shuffleStep').style.display = 'block'; 
+        }, 2500);
+        
+        setTimeout(() => { 
+            loader.innerText = "✅ Running Reduce Tasks..."; 
+            document.getElementById('reduceStep').style.display = 'block'; 
+        }, 4000);
+        
+        setTimeout(() => { 
+            loader.style.display = 'none';
+            btn.disabled = false;
+            btn.style.opacity = '1';
+        }, 4500);
+    }
+
+    function resetApp() {
+        document.getElementById('inputText').value = "";
+        document.getElementById('mapStep').style.display = 'none';
+        document.getElementById('shuffleStep').style.display = 'none';
+        document.getElementById('reduceStep').style.display = 'none';
+        document.getElementById('loader').style.display = 'none';
+        const btn = document.getElementById('startBtn');
+        btn.disabled = false;
+        btn.style.opacity = '1';
     }
 </script>
 </body>
