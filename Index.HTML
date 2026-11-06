@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hadoop MapReduce Simulator</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h2 { color: #0052cc; text-align: center; font-size: 22px; }
+        textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 16px; margin-bottom: 10px; }
+        button { background-color: #0052cc; color: white; border: none; padding: 14px; border-radius: 5px; width: 100%; font-size: 16px; cursor: pointer; font-weight: bold; }
+        button:active { background-color: #003d99; }
+        .step { background: #e9f2ff; margin-top: 15px; padding: 15px; border-left: 4px solid #0052cc; border-radius: 4px; display: none; word-wrap: break-word; }
+        h3 { margin-top: 0; font-size: 16px; color: #0052cc; }
+        .footer { text-align: center; margin-top: 30px; font-size: 14px; color: #666; font-weight: bold; line-height: 1.6; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Hadoop MapReduce Simulator</h2>
+    <p>Enter a short paragraph below to see how Hadoop counts words.</p>
+    <textarea id="inputText" rows="3">Big data is fast. Hadoop is big data.</textarea>
+    <button onclick="runSimulation()">Start MapReduce Job</button>
+
+    <div id="mapStep" class="step">
+        <h3>1. Map Phase (Splitting)</h3>
+        <p id="mapOutput"></p>
+    </div>
+
+    <div id="shuffleStep" class="step">
+        <h3>2. Shuffle & Sort Phase</h3>
+        <p id="shuffleOutput"></p>
+    </div>
+
+    <div id="reduceStep" class="step">
+        <h3>3. Reduce Phase (Final Output)</h3>
+        <p id="reduceOutput"></p>
+    </div>
+
+    <div class="footer">
+        Developed by Abhay Mirashi<br>
+        All rights reserved with admin
+    </div>
+</div>
+
+<script>
+    function runSimulation() {
+        document.getElementById('mapStep').style.display = 'none';
+        document.getElementById('shuffleStep').style.display = 'none';
+        document.getElementById('reduceStep').style.display = 'none';
+
+        const text = document.getElementById('inputText').value.toLowerCase().replace(/[^\w\s]/g, "");
+        const words = text.split(/\s+/).filter(w => w.length > 0);
+        if(words.length === 0) return;
+
+        let mapResult = words.map(w => `[<b>${w}</b>, 1]`).join(" ");
+        document.getElementById('mapOutput').innerHTML = mapResult;
+        
+        let shuffleDict = {};
+        words.forEach(w => {
+            if(!shuffleDict[w]) shuffleDict[w] = [];
+            shuffleDict[w].push(1);
+        });
+        let shuffleResult = Object.keys(shuffleDict).map(k => `<b>${k}</b>: [${shuffleDict[k].join(", ")}]`).join("<br>");
+        document.getElementById('shuffleOutput').innerHTML = shuffleResult;
+
+        let reduceResult = Object.keys(shuffleDict).map(k => `<b>${k}</b> = ${shuffleDict[k].length}`).join("<br>");
+        document.getElementById('reduceOutput').innerHTML = reduceResult;
+
+        setTimeout(() => { document.getElementById('mapStep').style.display = 'block'; }, 400);
+        setTimeout(() => { document.getElementById('shuffleStep').style.display = 'block'; }, 1200);
+        setTimeout(() => { document.getElementById('reduceStep').style.display = 'block'; }, 2000);
+    }
+</script>
+</body>
+</html>
